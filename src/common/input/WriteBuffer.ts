@@ -35,12 +35,16 @@ const WRITE_TIMEOUT_MS = 12;
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
 export class WriteBuffer extends Disposable {
+  // 记录缓存的数据
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
+  // 记录缓存的数据长度
   private _pendingData = 0;
+  // 记录应该处理的_writeBuffer中的数据的下标
   private _bufferOffset = 0;
   private _isSyncWriting = false;
   private _syncCalls = 0;
+  // 记录是否要处理用户输入了
   private _didUserInput = false;
 
   private readonly _onWriteParsed = this.register(new EventEmitter<void>());

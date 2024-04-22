@@ -47,6 +47,7 @@ export function utf32ToString(data: Uint32Array, start: number = 0, end: number 
  * To keep the decoder in line with JS strings it handles single surrogates as UCS2.
  */
 export class StringToUtf32 {
+  // The first (high) surrogate， a 16-bit code value in the range U+D800 to U+DBFF
   private _interim: number = 0;
 
   /**

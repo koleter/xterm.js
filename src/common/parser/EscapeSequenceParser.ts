@@ -521,7 +521,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let transition = 0;
     let start = 0;
     let handlerResult: void | boolean | Promise<boolean>;
-
     // resume from async handler
     if (this._parseStack.state) {
       // allow sync parser reset even in continuation mode
@@ -623,6 +622,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
       // normal transition & action lookup
       transition = this._transitions.table[this.currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
+      console.log(`EscapeSequenceParser parse, i: ${i}, code: ${code}, transition: ${transition}, transition >> TableAccess.TRANSITION_ACTION_SHIFT: ${transition >> TableAccess.TRANSITION_ACTION_SHIFT}`);
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
           // read ahead with loop unrolling

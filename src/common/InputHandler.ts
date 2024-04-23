@@ -116,6 +116,7 @@ let $temp = 0;
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
+  // 存储虚拟终端的输入
   private _parseBuffer: Uint32Array = new Uint32Array(4096);
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();

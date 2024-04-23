@@ -231,6 +231,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   public initialState: number;
   public currentState: number;
   public precedingJoinState: number; // UnicodeJoinProperties
+  public result: string = "";
 
   // buffers over several parse calls
   protected _params: Params;
@@ -520,6 +521,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let code = 0;
     let transition = 0;
     let start = 0;
+    this.result = "";
     let handlerResult: void | boolean | Promise<boolean>;
     // resume from async handler
     if (this._parseStack.state) {
@@ -629,21 +631,25 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded
           for (let j = i + 1; ; ++j) {
             if (j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this.result += String.fromCharCode(...data.subarray(i, j));
               this._printHandler(data, i, j);
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this.result += String.fromCharCode(...data.subarray(i, j));
               this._printHandler(data, i, j);
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this.result += String.fromCharCode(...data.subarray(i, j));
               this._printHandler(data, i, j);
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this.result += String.fromCharCode(...data.subarray(i, j));
               this._printHandler(data, i, j);
               i = j - 1;
               break;

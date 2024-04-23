@@ -150,9 +150,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
 
-  public write(data: string | Uint8Array, callback?: () => void): void {
+  public write(data: string | Uint8Array, callback?: (rawString: string) => void): void {
     console.log(`CoreTerminal write enter, data: ${data}`);
-    this._writeBuffer.write(data, callback);
+    this._writeBuffer.write(data, () => {
+      callback && callback(this._inputHandler._parser.result);
+    });
   }
 
   /**

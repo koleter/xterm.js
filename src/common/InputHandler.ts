@@ -178,7 +178,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
-    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
+    public readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
     super();
     this.register(this._parser);

@@ -1,0 +1,42 @@
+import { ILink, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
+import { Disposable } from 'common/Lifecycle';
+import { IBufferService } from 'common/services/Services';
+import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
+export declare class Linkifier extends Disposable implements ILinkifier2 {
+    private readonly _element;
+    private readonly _mouseService;
+    private readonly _renderService;
+    private readonly _bufferService;
+    private readonly _linkProviderService;
+    get currentLink(): ILinkWithState | undefined;
+    protected _currentLink: ILinkWithState | undefined;
+    private _mouseDownLink;
+    private _lastMouseEvent;
+    private _linkCacheDisposables;
+    private _lastBufferCell;
+    private _isMouseOut;
+    private _wasResized;
+    private _activeProviderReplies;
+    private _activeLine;
+    private readonly _onShowLinkUnderline;
+    readonly onShowLinkUnderline: import("common/EventEmitter").IEvent<ILinkifierEvent, void>;
+    private readonly _onHideLinkUnderline;
+    readonly onHideLinkUnderline: import("common/EventEmitter").IEvent<ILinkifierEvent, void>;
+    constructor(_element: HTMLElement, _mouseService: IMouseService, _renderService: IRenderService, _bufferService: IBufferService, _linkProviderService: ILinkProviderService);
+    private _handleMouseMove;
+    private _handleHover;
+    private _askForLink;
+    private _removeIntersectingLinks;
+    private _checkLinkProviderResult;
+    private _handleMouseDown;
+    private _handleMouseUp;
+    private _clearCurrentLink;
+    private _handleNewLink;
+    protected _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void;
+    private _fireUnderlineEvent;
+    protected _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void;
+    private _linkAtPosition;
+    private _positionFromMouseEvent;
+    private _createLinkUnderlineEvent;
+}
+//# sourceMappingURL=Linkifier.d.ts.map

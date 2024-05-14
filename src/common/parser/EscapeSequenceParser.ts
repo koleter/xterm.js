@@ -657,6 +657,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.EXECUTE:
+          this.result += String.fromCharCode(code);
           if (this._executeHandlers[code]) this._executeHandlers[code]();
           else this._executeHandlerFb(code);
           this.precedingJoinState = 0;

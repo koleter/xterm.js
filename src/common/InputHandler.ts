@@ -505,7 +505,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
-    console.log(`InputHandler print enter, start: ${start}, end: ${end}`);
     let code: number;
     let chWidth: number;
     const charset = this._charsetService.charset;

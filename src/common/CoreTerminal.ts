@@ -144,7 +144,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Setup WriteBuffer
     this._writeBuffer = this.register(new WriteBuffer((data, promiseResult) => {
-      console.log(`CoreTerminal _action enter, data: ${data}, promiseResult: ${promiseResult}`);
       this._inputHandler.parse(data, promiseResult);
     }));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));

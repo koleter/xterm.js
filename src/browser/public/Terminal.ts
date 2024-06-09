@@ -222,7 +222,6 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._core.clear();
   }
   public write(data: string | Uint8Array, callback?: () => void, showOnTerm: boolean = true): void {
-    console.log(`browser/public/Terminal write, data: ${data}, showOnTerm: ${showOnTerm}`);
     this._core.write(data, callback, showOnTerm);
   }
   public writeln(data: string | Uint8Array, callback?: () => void): void {

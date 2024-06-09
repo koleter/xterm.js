@@ -112,6 +112,7 @@ export class WriteBuffer extends Disposable {
       // If this is the first write call after the user has done some input,
       // parse it immediately to minimize input latency,
       // otherwise schedule for the next event
+      console.log(`WriteBuffer.write, this._didUserInput: ${this._didUserInput}`)
       if (this._didUserInput) {
         this._didUserInput = false;
         this._pendingData += data.length;

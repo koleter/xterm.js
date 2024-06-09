@@ -28,6 +28,8 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   onWillOpen: IEvent<HTMLElement>;
 
   cancel(ev: Event, force?: boolean): boolean | void;
+
+  write(data: string | Uint8Array, callback?: (() => void) | undefined, showOnTerm?: boolean): void;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;

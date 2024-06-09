@@ -667,7 +667,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.EXECUTE:
-          this.result += String.fromCharCode(code);
+          if (code == 10 || code == 13) {
+            this.result += String.fromCharCode(code);
+          }
           if (this.showOnTerm) {
             if (this._executeHandlers[code]) this._executeHandlers[code]();
             else this._executeHandlerFb(code);

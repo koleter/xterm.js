@@ -13,37 +13,37 @@
 
   term.open(document.getElementById('terminal'));
 
-  // term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ', function() {
-  //   console.log(arguments);
-  //   throw new Error("test error");
-  // })
-
-  term.write(`ll
-总用量 1180
--rw-------.  1 root root    1933 10月  4 2018 anaconda-ks.cfg
-drwxr-xr-x.  2 root root    4096 11月 25 2018 [0m[01;34mflume[0m
-drwxr-xr-x. 17 root root    4096 3月  17 2020 [01;34mhd[0m
--rw-r--r--.  1 root root   57781 10月  4 2018 install.log
--rw-r--r--.  1 root root   10952 10月  4 2018 install.log.syslog
-drwxr-xr-x.  2 root root    4096 2月  24 2019 [01;34mjars[0m
--rw-r--r--.  1 root root      76 12月  9 2018 love.tsv
-drwxr-xr-x.  4 root root    4096 10月 24 2013 [01;34mmysql-connector-java-5.1.27[0m
-drwxr-xr-x.  2 root root    4096 6月  26 2015 [01;34mmysql-libs[0m
-drwxr-xr-x.  3 root root    4096 10月  6 2018 [01;34msof[0m
--rw-r--r--.  1 root root 1042364 3月  23 2017 yum-3.2.29-81.el6.centos.noarch.rpm.1
--rw-r--r--.  1 root root   19052 3月  17 2020 zookeeper.out
-drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m公共的[0m
-drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m模板[0m
-drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m视频[0m
-drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m图片[0m
-drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m文档[0m
-drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m下载[0m
-drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m音乐[0m
-drwxr-xr-x.  2 root root    4096 1月  15 2020 [01;34m桌面[0m
-[m[root@hd-02 ~]# `, function(raw) {
-    console.log(raw);
+  term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ', function() {
+    console.log(arguments);
     throw new Error("test error");
-  })
+  }, true);
+
+//   term.write(`ll
+// 总用量 1180
+// -rw-------.  1 root root    1933 10月  4 2018 anaconda-ks.cfg
+// drwxr-xr-x.  2 root root    4096 11月 25 2018 [0m[01;34mflume[0m
+// drwxr-xr-x. 17 root root    4096 3月  17 2020 [01;34mhd[0m
+// -rw-r--r--.  1 root root   57781 10月  4 2018 install.log
+// -rw-r--r--.  1 root root   10952 10月  4 2018 install.log.syslog
+// drwxr-xr-x.  2 root root    4096 2月  24 2019 [01;34mjars[0m
+// -rw-r--r--.  1 root root      76 12月  9 2018 love.tsv
+// drwxr-xr-x.  4 root root    4096 10月 24 2013 [01;34mmysql-connector-java-5.1.27[0m
+// drwxr-xr-x.  2 root root    4096 6月  26 2015 [01;34mmysql-libs[0m
+// drwxr-xr-x.  3 root root    4096 10月  6 2018 [01;34msof[0m
+// -rw-r--r--.  1 root root 1042364 3月  23 2017 yum-3.2.29-81.el6.centos.noarch.rpm.1
+// -rw-r--r--.  1 root root   19052 3月  17 2020 zookeeper.out
+// drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m公共的[0m
+// drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m模板[0m
+// drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m视频[0m
+// drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m图片[0m
+// drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m文档[0m
+// drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m下载[0m
+// drwxr-xr-x.  2 root root    4096 10月  6 2018 [01;34m音乐[0m
+// drwxr-xr-x.  2 root root    4096 1月  15 2020 [01;34m桌面[0m
+// [m[root@hd-02 ~]# `, function(raw) {
+//     console.log(raw);
+//     throw new Error("test error");
+//   })
 </script>
 </body>
 </html>

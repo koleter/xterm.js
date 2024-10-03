@@ -692,6 +692,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           // inject values: currently not implemented
           break;
         case ParserAction.CSI_DISPATCH:
+          if (code == 65) {
+            this.result = "";
+          }
           // Trigger CSI Handler
           const handlers = this._csiHandlers[this._collect << 8 | code];
           let j = handlers ? handlers.length - 1 : -1;

@@ -4,7 +4,7 @@
  * @license MIT
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.enableLigatures = void 0;
+exports.enableLigatures = enableLigatures;
 const font_1 = require("./font");
 // Caches 100K characters worth of ligatures. In practice this works out to
 // about 650 KB worth of cache, when a moderate number of ligatures are present.
@@ -64,7 +64,6 @@ function enableLigatures(term, fallbackLigatures = []) {
         return getFallbackRanges(text, fallbackLigatures);
     });
 }
-exports.enableLigatures = enableLigatures;
 function getFallbackRanges(text, fallbackLigatures) {
     const ranges = [];
     for (let i = 0; i < text.length; i++) {

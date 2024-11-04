@@ -4,6 +4,7 @@
  * @license MIT
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = parse;
 /**
  * Parses a CSS font family value, returning the component font families
  * contained within.
@@ -47,7 +48,6 @@ function parse(family) {
     }
     return families;
 }
-exports.default = parse;
 /**
  * Parse a CSS string.
  *

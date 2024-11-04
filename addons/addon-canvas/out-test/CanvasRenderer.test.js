@@ -17,7 +17,7 @@ const ctxWrapper = {
     value: undefined,
     skipCanvasExceptions: true
 };
-test_1.default.beforeAll(({ browser }) => __awaiter(void 0, void 0, void 0, function* () {
+test_1.default.beforeAll((_a) => __awaiter(void 0, [_a], void 0, function* ({ browser }) {
     ctx = yield (0, TestUtils_1.createTestContext)(browser);
     yield (0, TestUtils_1.openTerminal)(ctx);
     ctxWrapper.value = ctx;

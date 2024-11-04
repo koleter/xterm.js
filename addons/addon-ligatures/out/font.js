@@ -4,6 +4,7 @@
  * @license MIT
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = load;
 const font_ligatures_1 = require("font-ligatures");
 const parse_1 = require("./parse");
 let fontsPromise = undefined;
@@ -91,7 +92,6 @@ async function load(fontFamily, cacheSize) {
     // If none of the fonts could resolve, throw an error
     return undefined;
 }
-exports.default = load;
 // https://drafts.csswg.org/css-fonts-4/#generic-font-families
 const genericFontFamilies = [
     'serif',

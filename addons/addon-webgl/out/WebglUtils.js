@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GLTexture = exports.expandFloat32Array = exports.createShader = exports.createProgram = exports.PROJECTION_MATRIX = void 0;
+exports.GLTexture = exports.PROJECTION_MATRIX = void 0;
+exports.createProgram = createProgram;
+exports.createShader = createShader;
+exports.expandFloat32Array = expandFloat32Array;
 const RendererUtils_1 = require("browser/renderer/shared/RendererUtils");
 exports.PROJECTION_MATRIX = new Float32Array([
     2, 0, 0, 0,
@@ -20,7 +23,6 @@ function createProgram(gl, vertexSource, fragmentSource) {
     console.error(gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
 }
-exports.createProgram = createProgram;
 function createShader(gl, type, source) {
     const shader = (0, RendererUtils_1.throwIfFalsy)(gl.createShader(type));
     gl.shaderSource(shader, source);
@@ -32,7 +34,6 @@ function createShader(gl, type, source) {
     console.error(gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
 }
-exports.createShader = createShader;
 function expandFloat32Array(source, max) {
     const newLength = Math.min(source.length * 2, max);
     const newArray = new Float32Array(newLength);
@@ -41,7 +42,6 @@ function expandFloat32Array(source, max) {
     }
     return newArray;
 }
-exports.expandFloat32Array = expandFloat32Array;
 class GLTexture {
     constructor(texture) {
         this.texture = texture;

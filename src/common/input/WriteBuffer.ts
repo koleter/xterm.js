@@ -46,7 +46,7 @@ export class WriteBuffer extends Disposable {
   private readonly _onWriteParsed = this.register(new EventEmitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
-  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean, hasCallback: boolean = false) => void | Promise<boolean>) {
+  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean, hasCallback?: boolean) => void | Promise<boolean>) {
     super();
   }
 
@@ -100,7 +100,7 @@ export class WriteBuffer extends Disposable {
     this._syncCalls = 0;
   }
 
-  public write(data: string | Uint8Array, callback?: () => void): void {
+  public write(data: string | Uint8Array, callback?: () => void, hasCallback?: boolean): void {
     if (this._pendingData > DISCARD_WATERMARK) {
       throw new Error('write data discarded, use flow control to avoid losing data');
     }
@@ -117,11 +117,11 @@ export class WriteBuffer extends Disposable {
         this._pendingData += data.length;
         this._writeBuffer.push(data);
         this._callbacks.push(callback);
-        this._innerWrite(0, true, !!callback);
+        this._innerWrite(0, true, hasCallback);
         return;
       }
 
-      setTimeout(() => this._innerWrite(0, true, !!callback));
+      setTimeout(() => this._innerWrite(0, true, hasCallback));
     }
 
     this._pendingData += data.length;

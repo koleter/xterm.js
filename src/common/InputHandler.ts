@@ -22,6 +22,7 @@ import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
+import resultParser from 'common/parser/ResultParser';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -423,7 +424,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Note: This method should only be called by `Terminal.write` to ensure correct execution order
    * and proper continuation of async parser handlers.
    */
-  public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
+  public parse(data: string | Uint8Array, promiseResult?: boolean, hasCallback: boolean = false): void | Promise<boolean> {
     let result: void | Promise<boolean>;
     let cursorStartX = this._activeBuffer.x;
     let cursorStartY = this._activeBuffer.y;
@@ -432,7 +433,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     if (wasPaused) {
       // assumption: _parseBuffer never mutates between async calls
-      if (result = this._parser.parse(this._parseBuffer, this._parseStack.decodedLength, promiseResult)) {
+      if (result = this._parser.parse(this._parseBuffer, this._parseStack.decodedLength, promiseResult, hasCallback)) {
         this._logSlowResolvingAsync(result);
         return result;
       }
@@ -472,7 +473,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         const len = (typeof data === 'string')
           ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
-        if (result = this._parser.parse(this._parseBuffer, len)) {
+        if (result = this._parser.parse(this._parseBuffer, len, undefined, hasCallback)) {
           this._preserveStack(cursorStartX, cursorStartY, len, i);
           this._logSlowResolvingAsync(result);
           return result;
@@ -483,7 +484,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         const len = (typeof data === 'string')
           ? this._stringDecoder.decode(data, this._parseBuffer)
           : this._utf8Decoder.decode(data, this._parseBuffer);
-        if (result = this._parser.parse(this._parseBuffer, len)) {
+        if (result = this._parser.parse(this._parseBuffer, len, undefined, hasCallback)) {
           this._preserveStack(cursorStartX, cursorStartY, len, 0);
           this._logSlowResolvingAsync(result);
           return result;
@@ -712,6 +713,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.x = 0;
     }
     this._activeBuffer.y++;
+    resultParser.moveCursor(0, 1);
     if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
       this._activeBuffer.y--;
       this._bufferService.scroll(this._eraseAttrData());
@@ -743,6 +745,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public carriageReturn(): boolean {
     this._activeBuffer.x = 0;
+    resultParser.setCol(0);
     return true;
   }
 
@@ -902,6 +905,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else {
       this._moveCursor(0, -(params.params[0] || 1));
     }
+    resultParser.moveCursor(0, -(params.params[0] || 1));
     return true;
   }
 
@@ -920,6 +924,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else {
       this._moveCursor(0, params.params[0] || 1);
     }
+    resultParser.moveCursor(0, params.params[0] || 1);
     return true;
   }
 
@@ -931,6 +936,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorForward(params: IParams): boolean {
     this._moveCursor(params.params[0] || 1, 0);
+    resultParser.moveCursor(params.params[0] || 1, 0);
     return true;
   }
 
@@ -942,6 +948,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorBackward(params: IParams): boolean {
     this._moveCursor(-(params.params[0] || 1), 0);
+    resultParser.moveCursor(-(params.params[0] || 1), 0);
     return true;
   }
 
@@ -956,6 +963,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public cursorNextLine(params: IParams): boolean {
     this.cursorDown(params);
     this._activeBuffer.x = 0;
+    resultParser.setCol(0);
     return true;
   }
 
@@ -970,6 +978,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public cursorPrecedingLine(params: IParams): boolean {
     this.cursorUp(params);
     this._activeBuffer.x = 0;
+    resultParser.setCol(0);
     return true;
   }
 
@@ -1202,6 +1211,8 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._resetBufferLine(j, respectProtect);
         }
         this._dirtyRowTracker.markDirty(j);
+        resultParser.eraseInBufferLine(resultParser.getCol(), -1);
+        resultParser.eraseUntilEndBufferLine();
         break;
       case 1:
         j = this._activeBuffer.y;
@@ -1267,12 +1278,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 0:
         this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
+        resultParser.eraseInBufferLine(resultParser.getCol(), -1);
         break;
       case 1:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
+        resultParser.eraseInBufferLine(0, resultParser.getCol() + 1);
         break;
       case 2:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
+        resultParser.eraseInBufferLine(0, -1);
         break;
     }
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);

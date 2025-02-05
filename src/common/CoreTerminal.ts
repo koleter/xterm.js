@@ -39,6 +39,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
+import resultParser from "./parser/ResultParser";
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -144,11 +145,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Setup WriteBuffer
     this._writeBuffer = this.register(new WriteBuffer((data, promiseResult, hasCallback: boolean = false) => {
-      if(hasCallback) {
-        this._inputHandler.parse(data, promiseResult);
-      } else {
-        this._inputHandler.parse(data, promiseResult);
-      }
+      this._inputHandler.parse(data, promiseResult, hasCallback);
     }));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
@@ -156,8 +153,9 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public write(data: string | Uint8Array, callback?: (rawString: string) => void, showOnTerm: boolean = true): void {
     this._inputHandler._parser.showOnTerm = showOnTerm;
     this._writeBuffer.write(data, () => {
-      callback && callback(this._inputHandler._parser.result);
-    });
+      // console.log(resultParser.getResult());
+      callback && callback(resultParser.getResult());
+    }, !!callback);
   }
 
   /**

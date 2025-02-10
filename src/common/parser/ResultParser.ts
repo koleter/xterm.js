@@ -8,6 +8,7 @@ class ResultParser {
   public _params: Params;
   public shouldParse: boolean | undefined = false;
   public _collect: number = 0;
+  public showOnTerm: boolean = true;
 
   constructor() {
     this._params = new Params(); // defaults to 32 storable params/subparams

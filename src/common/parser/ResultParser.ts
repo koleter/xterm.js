@@ -1,8 +1,47 @@
 import { Params } from "./Params";
 
+class LineBuffer {
+  private buffer: Uint32Array;
+  private size: number = 0;
+
+  constructor() {
+    this.buffer = new Uint32Array(32);
+  }
+
+  public setData(codeArray: Uint32Array, pos: number) {
+    if (this.buffer.length <= pos + codeArray.length) {
+      const newArray = new Uint32Array((pos + codeArray.length) * 2);
+      newArray.set(this.buffer);
+      this.buffer = newArray;
+    }
+    let writePos = pos;
+    for (let i = 0; i < codeArray.length; i++) {
+      this.buffer[writePos++] = codeArray[i];
+    }
+    this.size = Math.max(this.size, pos + codeArray.length);
+  }
+
+  public toString() {
+    return String.fromCharCode(...this.buffer.slice(0, this.size));
+  }
+
+  public eraseInBufferLine(start: number, end: number) {
+    if (start < 0) {
+      start = 0;
+    }
+    if (end < 0) {
+      end = this.size;
+    }
+    while (start < end) {
+      // replace with space
+      this.buffer[start] = 32;
+      start++;
+    }
+  }
+}
 
 class ResultParser {
-  private buffers: Uint32Array[] = [];
+  private buffers: LineBuffer[] = [];
   private line: number = 0;
   private col: number = 0;
   public _params: Params;
@@ -26,19 +65,11 @@ class ResultParser {
       return;
     }
     while (this.buffers.length <= this.line) {
-      this.buffers.push(new Uint32Array(32));
+      this.buffers.push(new LineBuffer());
     }
-    let bufferLine = this.buffers[this.line];
-    if (bufferLine.length <= this.col + codeArray.length) {
-      const newArray = new Uint32Array((this.col + codeArray.length) * 2);
-      newArray.set(bufferLine);
-      this.buffers[this.line] = newArray;
-      bufferLine = newArray;
-    }
-    for (let i = 0; i < codeArray.length; i++) {
-      bufferLine[this.col] = codeArray[i];
-      this.col++;
-    }
+    const bufferLine = this.buffers[this.line];
+    bufferLine.setData(codeArray, this.col);
+    this.col += codeArray.length;
   }
 
   public setCol(col: number) {
@@ -92,17 +123,7 @@ class ResultParser {
     if (!buffer) {
       return;
     }
-    if (start < 0) {
-      start = 0;
-    }
-    if (end < 0) {
-      end = buffer.length;
-    }
-    while (start < end && start < buffer.length) {
-      // replace with space
-      buffer[start] = 32;
-      start++;
-    }
+    buffer.eraseInBufferLine(start, end);
   }
 
   public eraseUntilEndBufferLine() {
@@ -123,7 +144,7 @@ class ResultParser {
         this.clear();
         return strings.join("\n");
       }
-      strings.push(String.fromCharCode(...line));
+      strings.push(line.toString());
     }
     this.clear();
     return strings.join("\n");

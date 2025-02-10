@@ -322,7 +322,7 @@ function createTerminal(): void {
       term.open(terminalContainer);
       term.write('pwd; builtin history -d $((HISTCMD-1))\r\n/data/lijinsong\r\n\x1b]0;work@tjtx135-5-234:/data/lijinsong\x07\x1b[37m[\x1b[32mwork\x1b[32m(\x1b[36m\x1b[37m)\x1b[35m@\x1b[0mtjtx135-5-234 \x1b[33mlijinsong\x1b[0m]$ ', function() {
         console.log(arguments[0]);
-      }, true);
+      }, false);
       setTextureAtlas(addons.webgl.instance.textureAtlas);
       addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
       addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));

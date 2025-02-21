@@ -6,6 +6,7 @@
 
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
+import resultParser from "../parser/ResultParser";
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
@@ -37,6 +38,8 @@ const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 export class WriteBuffer extends Disposable {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
+  private _shouldParses: (boolean | undefined)[] = [];
+  private _showOnTerms: (boolean | undefined)[] = [];
   private _pendingData = 0;
   private _bufferOffset = 0;
   private _isSyncWriting = false;
@@ -46,7 +49,7 @@ export class WriteBuffer extends Disposable {
   private readonly _onWriteParsed = this.register(new EventEmitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
-  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean, hasCallback?: boolean) => void | Promise<boolean>) {
+  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean, hasCallback?: boolean, showOnTerm?: boolean) => void | Promise<boolean>) {
     super();
   }
 
@@ -100,7 +103,7 @@ export class WriteBuffer extends Disposable {
     this._syncCalls = 0;
   }
 
-  public write(data: string | Uint8Array, callback?: () => void, hasCallback?: boolean): void {
+  public write(data: string | Uint8Array, callback?: () => void, hasCallback?: boolean, showOnTerm?: boolean): void {
     if (this._pendingData > DISCARD_WATERMARK) {
       throw new Error('write data discarded, use flow control to avoid losing data');
     }
@@ -117,16 +120,20 @@ export class WriteBuffer extends Disposable {
         this._pendingData += data.length;
         this._writeBuffer.push(data);
         this._callbacks.push(callback);
-        this._innerWrite(0, true, hasCallback);
+        this._shouldParses.push(hasCallback);
+        this._showOnTerms.push(showOnTerm);
+        this._innerWrite(0, true);
         return;
       }
 
-      setTimeout(() => this._innerWrite(0, true, hasCallback));
+      setTimeout(() => this._innerWrite(0, true));
     }
 
     this._pendingData += data.length;
     this._writeBuffer.push(data);
     this._callbacks.push(callback);
+    this._shouldParses.push(hasCallback);
+    this._showOnTerms.push(showOnTerm);
   }
 
   /**
@@ -157,11 +164,11 @@ export class WriteBuffer extends Disposable {
    *
    * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
    */
-  protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true, hasCallback: boolean = false): void {
+  protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
     const startTime = lastTime || Date.now();
     while (this._writeBuffer.length > this._bufferOffset) {
       const data = this._writeBuffer[this._bufferOffset];
-      const result = this._action(data, promiseResult, hasCallback);
+      const result = this._action(data, promiseResult, this._shouldParses[this._bufferOffset], this._showOnTerms[this._bufferOffset]);
       if (result) {
         /**
          * If we get a promise as return value, we re-schedule the continuation
@@ -232,12 +239,16 @@ export class WriteBuffer extends Disposable {
       if (this._bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
         this._writeBuffer = this._writeBuffer.slice(this._bufferOffset);
         this._callbacks = this._callbacks.slice(this._bufferOffset);
+        this._shouldParses = this._shouldParses.slice(this._bufferOffset);
+        this._showOnTerms = this._showOnTerms.slice(this._bufferOffset);
         this._bufferOffset = 0;
       }
       setTimeout(() => this._innerWrite());
     } else {
       this._writeBuffer.length = 0;
       this._callbacks.length = 0;
+      this._shouldParses.length = 0;
+      this._showOnTerms.length = 0;
       this._pendingData = 0;
       this._bufferOffset = 0;
     }

@@ -144,18 +144,17 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     }));
 
     // Setup WriteBuffer
-    this._writeBuffer = this.register(new WriteBuffer((data, promiseResult, hasCallback: boolean = false) => {
-      this._inputHandler.parse(data, promiseResult, hasCallback);
+    this._writeBuffer = this.register(new WriteBuffer((data, promiseResult, hasCallback: boolean = false, showOnTerm: boolean = true) => {
+      this._inputHandler.parse(data, promiseResult, hasCallback, showOnTerm);
     }));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
 
   public write(data: string | Uint8Array, callback?: (rawString: string) => void, showOnTerm: boolean = true): void {
-    resultParser.showOnTerm = showOnTerm;
     this._writeBuffer.write(data, () => {
       // console.log(resultParser.getResult());
       callback && callback(resultParser.getResult());
-    }, !!callback);
+    }, !!callback, showOnTerm);
   }
 
   /**

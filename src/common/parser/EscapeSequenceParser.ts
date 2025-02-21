@@ -626,7 +626,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
       // normal transition & action lookup
       transition = this._transitions.table[this.currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
-      switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
+      const action = transition >> TableAccess.TRANSITION_ACTION_SHIFT;
+      switch (action) {
         case ParserAction.PRINT:
           // read ahead with loop unrolling
           // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded

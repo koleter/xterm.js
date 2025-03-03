@@ -144,7 +144,20 @@ class ResultParser {
         this.clear();
         return strings.join("\n");
       }
-      strings.push(line.toString());
+      let lineStr = line.toString();
+      if (i === 0) {
+        for (let j = 0; j < 10; j++) {
+          if (lineStr.charCodeAt(j) === 0) {
+            let k = j;
+            while (lineStr.charCodeAt(k) === 0) {
+              k++;
+            }
+            lineStr = lineStr.substring(k);
+            break;
+          }
+        }
+      }
+      strings.push(lineStr);
     }
     this.clear();
     return strings.join("\n");

@@ -138,7 +138,7 @@ class ResultParser {
       return "";
     }
     let strings: string[] = [];
-    for (let i = 0; i < this.line; i++) {
+    for (let i = 0; i < this.buffers.length; i++) {
       const line = this.buffers[i];
       if (!line) {
         this.clear();

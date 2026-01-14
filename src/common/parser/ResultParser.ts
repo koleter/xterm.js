@@ -45,7 +45,10 @@ class ResultParser {
   private line: number = 0;
   private col: number = 0;
   public _params: Params;
+  // True if there is a callback function
   public shouldParse: boolean | undefined = false;
+  // True if input has '\n'
+  public shouldPrint: boolean | undefined = false;
   public _collect: number = 0;
   public showOnTerm: boolean = true;
 
@@ -62,6 +65,9 @@ class ResultParser {
 
   public print(codeArray: Uint32Array) {
     if (!this.shouldParse) {
+      return;
+    }
+    if (codeArray.length === 0) {
       return;
     }
     while (this.buffers.length <= this.line) {
@@ -137,12 +143,19 @@ class ResultParser {
     if (!this.shouldParse) {
       return "";
     }
+    if (!this.shouldPrint) {
+      return "";
+    }
+    if (this.line === 0) {
+      return "";
+    }
     let strings: string[] = [];
     for (let i = 0; i < this.buffers.length; i++) {
       const line = this.buffers[i];
       if (!line) {
+        // maybe this line has been deleted
         this.clear();
-        return strings.join("\n");
+        return strings.join("");
       }
       let lineStr = line.toString();
       if (i === 0) {
@@ -160,7 +173,8 @@ class ResultParser {
       strings.push(lineStr);
     }
     this.clear();
-    return strings.join("\n");
+    this.shouldPrint = false;
+    return strings.join("");
   }
 }
 

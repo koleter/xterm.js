@@ -522,7 +522,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let transition = 0;
     let start = 0;
     resultParser.shouldParse = hasCallback;
-    resultParser.clear();
     let handlerResult: void | boolean | Promise<boolean>;
 
     // resume from async handler

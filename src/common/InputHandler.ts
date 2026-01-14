@@ -710,6 +710,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public lineFeed(): boolean {
     resultParser.moveCursor(0, 1);
+    resultParser.shouldPrint = true;
+    resultParser.print(new Uint32Array([10]));
     if (resultParser.showOnTerm) {
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);
       if (this._optionsService.rawOptions.convertEol) {

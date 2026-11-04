@@ -89,8 +89,7 @@ export class WriteBuffer extends Disposable {
     let chunk: string | Uint8Array | undefined;
     while (chunk = this._writeBuffer.shift()) {
       this._action(chunk);
-      const cb = this._callbacks.shift();
-      if (cb) cb();
+      this._invokeCallback(this._callbacks.shift());
     }
     // reset to avoid reprocessing of chunks with scheduled innerWrite call
     // stopping scheduled innerWrite by offset > length condition
@@ -133,6 +132,15 @@ export class WriteBuffer extends Disposable {
     this._callbacks.push(callback);
     this._shouldParses.push(hasCallback);
     this._showOnTerms.push(showOnTerm);
+  }
+
+  private _invokeCallback(callback?: () => void): void {
+    try {
+      callback?.();
+    } catch (error) {
+      // Report callback errors without interrupting queue processing.
+      queueMicrotask(() => { throw error; });
+    }
   }
 
   /**
@@ -223,8 +231,7 @@ export class WriteBuffer extends Disposable {
         return;
       }
 
-      const cb = this._callbacks[this._bufferOffset];
-      if (cb) cb();
+      this._invokeCallback(this._callbacks[this._bufferOffset]);
       this._bufferOffset++;
       this._pendingData -= data.length;
 

@@ -107,4 +107,82 @@ describe('WriteBuffer', () => {
       assert.equal(last, '11'); // 1 + 10 sub calls = 11
     });
   });
+
+  describe('callback errors', () => {
+    let originalQueueMicrotask: typeof queueMicrotask;
+    let errorTasks: (() => void)[];
+
+    beforeEach(() => {
+      originalQueueMicrotask = globalThis.queueMicrotask;
+      errorTasks = [];
+      globalThis.queueMicrotask = callback => { errorTasks.push(callback); };
+    });
+
+    afterEach(() => {
+      globalThis.queueMicrotask = originalQueueMicrotask;
+      wb.dispose();
+    });
+
+    it('continues queued and later writes after a callback throws', async () => {
+      const error = new Error('write callback failed');
+      wb.write('a', () => {
+        cbStack.push('a');
+        throw error;
+      });
+      await new Promise<void>(resolve => wb.write('b', () => {
+        cbStack.push('b');
+        resolve();
+      }));
+      await new Promise<void>(resolve => wb.write('c', () => {
+        cbStack.push('c');
+        resolve();
+      }));
+
+      assert.deepEqual(stack, ['a', 'b', 'c']);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+      assert.lengthOf(errorTasks, 1);
+      assert.throws(errorTasks[0], Error, error.message);
+    });
+
+    it('preserves write order when a callback appends data and throws', async () => {
+      const error = new Error('appending callback failed');
+      const completed = new Promise<void>(resolve => {
+        wb.write('a', () => {
+          cbStack.push('a');
+          wb.write('c', () => {
+            cbStack.push('c');
+            resolve();
+          });
+          throw error;
+        });
+        wb.write('b', () => { cbStack.push('b'); });
+      });
+      await completed;
+
+      assert.deepEqual(stack, ['a', 'b', 'c']);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+      assert.lengthOf(errorTasks, 1);
+      assert.throws(errorTasks[0], Error, error.message);
+    });
+
+    it('continues synchronous and asynchronous writes after a flushed callback throws', async () => {
+      const error = new Error('flushed callback failed');
+      wb.write('a', () => {
+        cbStack.push('a');
+        throw error;
+      });
+      wb.write('b', () => { cbStack.push('b'); });
+      wb.writeSync('c');
+      wb.writeSync('d');
+      await new Promise<void>(resolve => wb.write('e', () => {
+        cbStack.push('e');
+        resolve();
+      }));
+
+      assert.deepEqual(stack, ['a', 'b', 'c', 'd', 'e']);
+      assert.deepEqual(cbStack, ['a', 'b', 'e']);
+      assert.lengthOf(errorTasks, 1);
+      assert.throws(errorTasks[0], Error, error.message);
+    });
+  });
 });

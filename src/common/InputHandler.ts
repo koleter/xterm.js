@@ -22,7 +22,6 @@ import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
-import resultParser from 'common/parser/ResultParser';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -430,7 +429,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     let cursorStartY = this._activeBuffer.y;
     let start = 0;
     const wasPaused = this._parseStack.paused;
-    resultParser.showOnTerm = showOnTerm;
+    this._parser.resultParser.showOnTerm = showOnTerm;
 
     if (wasPaused) {
       // assumption: _parseBuffer never mutates between async calls
@@ -504,6 +503,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (viewportStart < this._bufferService.rows) {
       this._onRequestRefreshRows.fire(Math.min(viewportStart, this._bufferService.rows - 1), Math.min(viewportEnd, this._bufferService.rows - 1));
     }
+  }
+
+  public getResult(): string {
+    return this._parser.resultParser.getResult();
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
@@ -709,10 +712,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
   public lineFeed(): boolean {
-    resultParser.moveCursor(0, 1);
-    resultParser.shouldPrint = true;
-    resultParser.print(new Uint32Array([10]));
-    if (resultParser.showOnTerm) {
+    this._parser.resultParser.moveCursor(0, 1);
+    this._parser.resultParser.shouldPrint = true;
+    this._parser.resultParser.print(new Uint32Array([10]));
+    if (this._parser.resultParser.showOnTerm) {
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);
       if (this._optionsService.rawOptions.convertEol) {
         this._activeBuffer.x = 0;
@@ -750,10 +753,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    CR   "Carriage Return"  "\r, \x0D"  "Move the cursor to the beginning of the row."
    */
   public carriageReturn(): boolean {
-    if (resultParser.showOnTerm) {
+    if (this._parser.resultParser.showOnTerm) {
       this._activeBuffer.x = 0;
     }
-    resultParser.setCol(0);
+    this._parser.resultParser.setCol(0);
     return true;
   }
 
@@ -769,7 +772,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * with the cursor, thus at the home position (top-leftmost cell) this has no effect.
    */
   public backspace(): boolean {
-    resultParser.moveCursor(-1, 0);
+    this._parser.resultParser.moveCursor(-1, 0);
     // reverse wrap-around is disabled
     if (!this._coreService.decPrivateModes.reverseWraparound) {
       this._restrictCursor();
@@ -907,7 +910,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * If the cursor would pass the top scroll margin, it will stop there.
    */
   public cursorUp(params: IParams): boolean {
-    if (resultParser.showOnTerm) {
+    if (this._parser.resultParser.showOnTerm) {
       // stop at scrollTop
       const diffToTop = this._activeBuffer.y - this._activeBuffer.scrollTop;
       if (diffToTop >= 0) {
@@ -916,7 +919,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._moveCursor(0, -(params.params[0] || 1));
       }
     }
-    resultParser.moveCursor(0, -(params.params[0] || 1));
+    this._parser.resultParser.moveCursor(0, -(params.params[0] || 1));
     return true;
   }
 
@@ -935,7 +938,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else {
       this._moveCursor(0, params.params[0] || 1);
     }
-    resultParser.moveCursor(0, params.params[0] || 1);
+    this._parser.resultParser.moveCursor(0, params.params[0] || 1);
     return true;
   }
 
@@ -946,10 +949,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CUF   "Cursor Forward"    "CSI Ps C"  "Move cursor `Ps` times forward (default=1)."
    */
   public cursorForward(params: IParams): boolean {
-    if (resultParser.showOnTerm) {
+    if (this._parser.resultParser.showOnTerm) {
       this._moveCursor(params.params[0] || 1, 0);
     }
-    resultParser.moveCursor(params.params[0] || 1, 0);
+    this._parser.resultParser.moveCursor(params.params[0] || 1, 0);
     return true;
   }
 
@@ -961,7 +964,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorBackward(params: IParams): boolean {
     this._moveCursor(-(params.params[0] || 1), 0);
-    resultParser.moveCursor(-(params.params[0] || 1), 0);
+    this._parser.resultParser.moveCursor(-(params.params[0] || 1), 0);
     return true;
   }
 
@@ -976,7 +979,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public cursorNextLine(params: IParams): boolean {
     this.cursorDown(params);
     this._activeBuffer.x = 0;
-    resultParser.setCol(0);
+    this._parser.resultParser.setCol(0);
     return true;
   }
 
@@ -991,7 +994,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public cursorPrecedingLine(params: IParams): boolean {
     this.cursorUp(params);
     this._activeBuffer.x = 0;
-    resultParser.setCol(0);
+    this._parser.resultParser.setCol(0);
     return true;
   }
 
@@ -1217,9 +1220,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     let j;
     switch (params.params[0]) {
       case 0:
-        resultParser.eraseInBufferLine(resultParser.getCol(), -1);
-        resultParser.eraseUntilEndBufferLine();
-        if (resultParser.showOnTerm) {
+        this._parser.resultParser.eraseInBufferLine(this._parser.resultParser.getCol(), -1);
+        this._parser.resultParser.eraseUntilEndBufferLine();
+        if (this._parser.resultParser.showOnTerm) {
           j = this._activeBuffer.y;
           this._dirtyRowTracker.markDirty(j);
           this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
@@ -1230,7 +1233,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
         break;
       case 1:
-        if (!resultParser.showOnTerm) {
+        if (!this._parser.resultParser.showOnTerm) {
           return true;
         }
         j = this._activeBuffer.y;
@@ -1247,7 +1250,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._dirtyRowTracker.markDirty(0);
         break;
       case 2:
-        if (!resultParser.showOnTerm) {
+        if (!this._parser.resultParser.showOnTerm) {
           return true;
         }
         j = this._bufferService.rows;
@@ -1258,7 +1261,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._dirtyRowTracker.markDirty(0);
         break;
       case 3:
-        if (!resultParser.showOnTerm) {
+        if (!this._parser.resultParser.showOnTerm) {
           return true;
         }
         // Clear scrollback (everything not in viewport)
@@ -1301,22 +1304,22 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        resultParser.eraseInBufferLine(resultParser.getCol(), -1);
-        if (!resultParser.showOnTerm) {
+        this._parser.resultParser.eraseInBufferLine(this._parser.resultParser.getCol(), -1);
+        if (!this._parser.resultParser.showOnTerm) {
           return true;
         }
         this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         break;
       case 1:
-        resultParser.eraseInBufferLine(0, resultParser.getCol() + 1);
-        if (!resultParser.showOnTerm) {
+        this._parser.resultParser.eraseInBufferLine(0, this._parser.resultParser.getCol() + 1);
+        if (!this._parser.resultParser.showOnTerm) {
           return true;
         }
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
         break;
       case 2:
-        resultParser.eraseInBufferLine(0, -1);
-        if (!resultParser.showOnTerm) {
+        this._parser.resultParser.eraseInBufferLine(0, -1);
+        if (!this._parser.resultParser.showOnTerm) {
           return true;
         }
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);

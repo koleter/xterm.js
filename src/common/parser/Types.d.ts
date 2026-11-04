@@ -5,6 +5,7 @@
 
 import { IDisposable } from 'common/Types';
 import { ParserState } from 'common/parser/Constants';
+import { ResultParser } from 'common/parser/ResultParser';
 
 
 /** sequence params serialized to js arrays */
@@ -145,6 +146,9 @@ export type PrintFallbackHandlerType = PrintHandlerType;
  * EscapeSequenceParser interface.
  */
 export interface IEscapeSequenceParser extends IDisposable {
+  /** Captured output and write options belonging to this parser instance. */
+  readonly resultParser: ResultParser;
+
   /**
    * Preceding grapheme-join-state.
    * Used for joining grapheme clusters across calls to `print`.

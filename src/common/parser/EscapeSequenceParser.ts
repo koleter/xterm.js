@@ -10,7 +10,7 @@ import { IDisposable } from 'common/Types';
 import { Params } from 'common/parser/Params';
 import { OscParser } from 'common/parser/OscParser';
 import { DcsParser } from 'common/parser/DcsParser';
-import resultParser from 'common/parser/ResultParser';
+import { ResultParser } from 'common/parser/ResultParser';
 
 /**
  * Table values are generated like this:
@@ -229,6 +229,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  * TODO: implement error recovery hook via error handler return values
  */
 export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
+  public readonly resultParser = new ResultParser();
   public initialState: number;
   public currentState: number;
   public precedingJoinState: number; // UnicodeJoinProperties
@@ -521,7 +522,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let code = 0;
     let transition = 0;
     let start = 0;
-    resultParser.shouldParse = hasCallback;
+    this.resultParser.shouldParse = hasCallback;
     let handlerResult: void | boolean | Promise<boolean>;
 
     // resume from async handler
@@ -632,32 +633,32 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded
           for (let j = i + 1; ; ++j) {
             if (j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              resultParser.print(data.subarray(i, j));
-              if (resultParser.showOnTerm) {
+              this.resultParser.print(data.subarray(i, j));
+              if (this.resultParser.showOnTerm) {
                 this._printHandler(data, i, j);
               }
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              resultParser.print(data.subarray(i, j));
-              if (resultParser.showOnTerm) {
+              this.resultParser.print(data.subarray(i, j));
+              if (this.resultParser.showOnTerm) {
                 this._printHandler(data, i, j);
               }
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              resultParser.print(data.subarray(i, j));
-              if (resultParser.showOnTerm) {
+              this.resultParser.print(data.subarray(i, j));
+              if (this.resultParser.showOnTerm) {
                 this._printHandler(data, i, j);
               }
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              resultParser.print(data.subarray(i, j));
-              if (resultParser.showOnTerm) {
+              this.resultParser.print(data.subarray(i, j));
+              if (this.resultParser.showOnTerm) {
                 this._printHandler(data, i, j);
               }
               i = j - 1;
@@ -711,15 +712,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             switch (code) {
               case 0x3b:
                 this._params.addParam(0);  // ZDM
-                resultParser._params.addParam(0);  // ZDM
+                this.resultParser._params.addParam(0);  // ZDM
                 break;
               case 0x3a:
                 this._params.addSubParam(-1);
-                resultParser._params.addSubParam(-1);
+                this.resultParser._params.addSubParam(-1);
                 break;
               default:  // 0x30 - 0x39
                 this._params.addDigit(code - 48);
-                resultParser._params.addDigit(code - 48);
+                this.resultParser._params.addDigit(code - 48);
             }
           } while (++i < length && (code = data[i]) > 0x2f && code < 0x3c);
           i--;
@@ -751,9 +752,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._params.reset();
           this._params.addParam(0); // ZDM
           this._collect = 0;
-          resultParser._params.reset();
-          resultParser._params.addParam(0); // ZDM
-          resultParser._collect = 0;
+          this.resultParser._params.reset();
+          this.resultParser._params.addParam(0); // ZDM
+          this.resultParser._collect = 0;
           break;
         case ParserAction.DCS_HOOK:
           this._dcsParser.hook(this._collect << 8 | code, this._params);

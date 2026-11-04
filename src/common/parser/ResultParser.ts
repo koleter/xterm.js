@@ -40,7 +40,7 @@ class LineBuffer {
   }
 }
 
-class ResultParser {
+export class ResultParser {
   private buffers: LineBuffer[] = [];
   private line: number = 0;
   private col: number = 0;
@@ -177,5 +177,3 @@ class ResultParser {
     return strings.join("");
   }
 }
-
-export default new ResultParser();

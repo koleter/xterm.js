@@ -6,7 +6,6 @@
 
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import resultParser from "../parser/ResultParser";
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 

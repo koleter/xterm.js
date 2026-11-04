@@ -39,7 +39,6 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
-import resultParser from "./parser/ResultParser";
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -152,8 +151,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   public write(data: string | Uint8Array, callback?: (rawString: string) => void, showOnTerm: boolean = true): void {
     this._writeBuffer.write(data, () => {
-      // console.log(resultParser.getResult());
-      callback && callback(resultParser.getResult());
+      callback && callback(this._inputHandler.getResult());
     }, !!callback, showOnTerm);
   }
 

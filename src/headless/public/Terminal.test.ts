@@ -46,6 +46,39 @@ describe('Headless API Tests', function (): void {
     strictEqual(result, 'abc');
   });
 
+  it('keeps captured output isolated between terminals', async () => {
+    const other = new Terminal({ allowProposedApi: true });
+    try {
+      strictEqual(await writeResult(term, 'first-'), '');
+      strictEqual(await writeResult(other, 'second\r\n'), 'second\n');
+      strictEqual(await writeResult(term, 'done\r\n'), 'first-done\n');
+      lineEquals(0, 'first-done');
+      strictEqual(other.buffer.active.getLine(0)!.translateToString(true), 'second');
+    } finally {
+      other.dispose();
+    }
+  });
+
+  it('keeps capture and visibility isolated during reentrant parsing', async () => {
+    const other = new Terminal({ allowProposedApi: true });
+    let otherResult: string | undefined;
+    const handler = term.parser.registerCsiHandler({ final: 'z' }, () => {
+      // Make the other terminal process its next write immediately.
+      other.input('x', true);
+      other.write('hidden\r\n', (result?: string) => otherResult = result, false);
+      return true;
+    });
+    try {
+      strictEqual(await writeResult(term, 'before\x1b[zafter\r\n'), 'beforeafter\n');
+      strictEqual(otherResult, 'hidden\n');
+      lineEquals(0, 'beforeafter');
+      strictEqual(other.buffer.active.getLine(0)!.translateToString(true), '');
+    } finally {
+      handler.dispose();
+      other.dispose();
+    }
+  });
+
   it('write - bytes (UTF8)', async () => {
     await writeSync(new Uint8Array([102, 111, 111])); // foo
     await writeSync(new Uint8Array([98, 97, 114])); // bar
@@ -479,6 +512,10 @@ describe('Headless API Tests', function (): void {
 
 function writeSync(text: string | Uint8Array): Promise<void> {
   return new Promise<void>(r => term.write(text, r));
+}
+
+function writeResult(terminal: Terminal, text: string): Promise<string> {
+  return new Promise<string>(resolve => terminal.write(text, (result?: string) => resolve(result ?? '')));
 }
 
 function writelnSync(text: string | Uint8Array): Promise<void> {

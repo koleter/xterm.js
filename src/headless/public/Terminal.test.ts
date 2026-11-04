@@ -46,6 +46,22 @@ describe('Headless API Tests', function (): void {
     strictEqual(result, 'abc');
   });
 
+  it('captures long lines across writes and continues processing queued writes', async () => {
+    const chunk = 'x'.repeat(100000);
+    strictEqual(await writeResult(term, chunk), '');
+
+    const [result, nextResult] = await Promise.all([
+      writeResult(term, `${chunk}\r\n`),
+      writeResult(term, 'next\r\n')
+    ]);
+    strictEqual(result, `${chunk}${chunk}\n`);
+    strictEqual(nextResult, 'next\n');
+  });
+
+  it('captures Unicode codepoints outside the BMP', async () => {
+    strictEqual(await writeResult(term, '中文😀𠮷\r\n'), '中文😀𠮷\n');
+  });
+
   it('keeps captured output isolated between terminals', async () => {
     const other = new Terminal({ allowProposedApi: true });
     try {

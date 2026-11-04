@@ -1,3 +1,4 @@
+import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from "./Params";
 
 class LineBuffer {
@@ -21,8 +22,8 @@ class LineBuffer {
     this.size = Math.max(this.size, pos + codeArray.length);
   }
 
-  public toString() {
-    return String.fromCharCode(...this.buffer.slice(0, this.size));
+  public toString(): string {
+    return utf32ToString(this.buffer, 0, this.size);
   }
 
   public eraseInBufferLine(start: number, end: number) {

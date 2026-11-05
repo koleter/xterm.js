@@ -51,7 +51,6 @@ export class ResultParser {
   // True if input has '\n'
   public shouldPrint: boolean | undefined = false;
   public _collect: number = 0;
-  public showOnTerm: boolean = true;
 
   constructor() {
     this._params = new Params(); // defaults to 32 storable params/subparams

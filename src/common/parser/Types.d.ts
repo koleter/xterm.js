@@ -146,7 +146,7 @@ export type PrintFallbackHandlerType = PrintHandlerType;
  * EscapeSequenceParser interface.
  */
 export interface IEscapeSequenceParser extends IDisposable {
-  /** Captured output and write options belonging to this parser instance. */
+  /** Captured output belonging to this parser instance. */
   readonly resultParser: ResultParser;
 
   /**

@@ -39,6 +39,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
+import { OutputParser } from 'common/parser/OutputParser';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -57,6 +58,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
+  private _outputParser: OutputParser | undefined;
   private _windowsWrappingHeuristics = this.register(new MutableDisposable());
 
   private readonly _onBinary = this.register(new EventEmitter<string>());
@@ -144,15 +146,26 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Setup WriteBuffer
     this._writeBuffer = this.register(new WriteBuffer((data, promiseResult, hasCallback: boolean = false, showOnTerm: boolean = true) => {
-      return this._inputHandler.parse(data, promiseResult, hasCallback, showOnTerm);
+      if (!showOnTerm) {
+        this._getOutputParser().parse(data, hasCallback);
+        return;
+      }
+      return this._inputHandler.parse(data, promiseResult, hasCallback);
     }));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
 
   public write(data: string | Uint8Array, callback?: (rawString: string) => void, showOnTerm: boolean = true): void {
     this._writeBuffer.write(data, () => {
-      callback && callback(this._inputHandler.getResult());
+      callback && callback(showOnTerm ? this._inputHandler.getResult() : this._getOutputParser().getResult());
     }, !!callback, showOnTerm);
+  }
+
+  private _getOutputParser(): OutputParser {
+    if (!this._outputParser) {
+      this._outputParser = this.register(new OutputParser());
+    }
+    return this._outputParser;
   }
 
   /**
@@ -253,6 +266,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   public reset(): void {
     this._inputHandler.reset();
+    this._outputParser?.reset();
     this._bufferService.reset();
     this._charsetService.reset();
     this.coreService.reset();

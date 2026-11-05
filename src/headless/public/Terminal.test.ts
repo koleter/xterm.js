@@ -95,6 +95,170 @@ describe('Headless API Tests', function (): void {
     }
   });
 
+  describe('hidden output', () => {
+    it('does not change the displayed buffer, cursor or modes', async () => {
+      await writeSync('visible');
+      const before = Array.from({ length: term.buffer.active.length }, (_, i) => term.buffer.active.getLine(i)!.translateToString());
+      const modes = term.modes;
+      await writeResult(term, '\x1b[3;4H\x1b[3P\x1b[2J\x1b[?1049h\x1b[4h\x1b[?2004hhidden\r\n', false);
+
+      strictEqual(term.buffer.active.type, 'normal');
+      strictEqual(term.buffer.active.cursorX, 7);
+      strictEqual(term.buffer.active.cursorY, 0);
+      deepStrictEqual(term.modes, modes);
+      deepStrictEqual(Array.from({ length: term.buffer.active.length }, (_, i) => term.buffer.active.getLine(i)!.translateToString()), before);
+    });
+
+    it('does not change displayed text attributes without a callback', async () => {
+      term.write('\x1b[31m\x1b[1m', undefined, false);
+      await writeSync('X');
+
+      const cell = term.buffer.active.getLine(0)!.getCell(0)!;
+      strictEqual(cell.getChars(), 'X');
+      strictEqual(cell.isFgDefault(), true);
+      strictEqual(cell.isBold(), 0);
+    });
+
+    it('does not emit terminal events or invoke registered parser handlers', async () => {
+      const events: string[] = [];
+      term.onData(() => events.push('data'));
+      term.onTitleChange(() => events.push('title'));
+      term.onBell(() => events.push('bell'));
+      term.onCursorMove(() => events.push('cursor'));
+      term.onLineFeed(() => events.push('linefeed'));
+      term.onResize(() => events.push('resize'));
+      term.onScroll(() => events.push('scroll'));
+      term.parser.registerCsiHandler({ final: 'z' }, () => { events.push('csi'); return true; });
+      term.parser.registerEscHandler({ final: 'Z' }, () => { events.push('esc'); return true; });
+      term.parser.registerOscHandler(777, () => { events.push('osc'); return true; });
+      term.parser.registerDcsHandler({ final: 'q' }, () => { events.push('dcs'); return true; });
+
+      const result = await writeResult(term, '\x07\x1b]2;hidden\x07\x1b[6n\x1b[5n\x1b[c\x1bP$qm\x1b\\\x1b[z\x1bZ\x1b]777;value\x07\x1bPqvalue\x1b\\hidden\r\n', false);
+      strictEqual(result, 'hidden\n');
+      deepStrictEqual(events, []);
+    });
+
+    it('keeps hidden text and split escape sequences separate from displayed output', async () => {
+      strictEqual(await writeResult(term, 'visible-'), '');
+      strictEqual(await writeResult(term, 'hidden-\x1b[', false), '');
+      strictEqual(await writeResult(term, 'done\r\n'), 'visible-done\n');
+      strictEqual(await writeResult(term, '31mresult\r\n', false), 'hidden-result\n');
+      lineEquals(0, 'visible-done');
+      lineEquals(1, '');
+    });
+
+    it('preserves a displayed escape sequence while processing hidden output', async () => {
+      strictEqual(await writeResult(term, 'visible-\x1b['), '');
+      strictEqual(await writeResult(term, 'hidden\r\n', false), 'hidden\n');
+      strictEqual(await writeResult(term, '31mend\r\n'), 'visible-end\n');
+      lineEquals(0, 'visible-end');
+      strictEqual(term.buffer.active.getLine(0)!.getCell(8)!.getFgColor(), 1);
+    });
+
+    it('preserves split OSC and DCS sequences across hidden writes', async () => {
+      strictEqual(await writeResult(term, 'before\x1b]2;unfinished', false), '');
+      await writeSync('visible\r\n');
+      strictEqual(await writeResult(term, '\x07after\x1bPqpayload\x1b', false), '');
+      strictEqual(await writeResult(term, '\\end\r\n', false), 'beforeafterend\n');
+      lineEquals(0, 'visible');
+    });
+
+    it('keeps split UTF8 sequences separate for hidden and displayed output', async () => {
+      strictEqual(await writeResult(term, new Uint8Array([0xf0, 0x9f]), false), '');
+      strictEqual(await writeResult(term, new Uint8Array([0xe4, 0xb8])), '');
+      strictEqual(await writeResult(term, new Uint8Array([0x98, 0x80, 13, 10]), false), '😀\n');
+      strictEqual(await writeResult(term, new Uint8Array([0xad, 13, 10])), '中\n');
+      lineEquals(0, '中');
+    });
+
+    it('preserves split UTF16 surrogates in hidden output', async () => {
+      strictEqual(await writeResult(term, '\ud83d', false), '');
+      await writeSync('visible\r\n');
+      strictEqual(await writeResult(term, '\ude00\r\n', false), '😀\n');
+      lineEquals(0, 'visible');
+    });
+
+    it('handles an unpaired surrogate at the hidden decoding buffer boundary', async () => {
+      strictEqual(await writeResult(term, '\ud800', false), '');
+      const text = 'a'.repeat(4096);
+      strictEqual(await writeResult(term, `${text}\r\n`, false), `\ud800${text}\n`);
+    });
+
+    it('captures long hidden output without displaying it', async () => {
+      const text = 'x'.repeat(200000) + '😀𠮷';
+      strictEqual(await writeResult(term, `${text}\r\n`, false), `${text}\n`);
+      lineEquals(0, '');
+      strictEqual(term.buffer.active.cursorX, 0);
+      strictEqual(term.buffer.active.cursorY, 0);
+    });
+
+    it('resets hidden capture and escape state with the terminal', async () => {
+      strictEqual(await writeResult(term, 'old\x1b]2;unfinished', false), '');
+      term.reset();
+      strictEqual(await writeResult(term, 'new\r\n', false), 'new\n');
+      strictEqual(await writeResult(term, new Uint8Array([0xf0, 0x9f]), false), '');
+      strictEqual(await writeResult(term, '\ud83d', false), '');
+      term.reset();
+      strictEqual(await writeResult(term, new Uint8Array([0xe4, 0xb8, 0xad, 13, 10]), false), '中\n');
+      strictEqual(await writeResult(term, 'text\r\n', false), 'text\n');
+    });
+
+    it('keeps a hidden full reset isolated from the display', async () => {
+      await writeSync('visible');
+      strictEqual(await writeResult(term, 'old\x1bcnew\r\n', false), 'new\n');
+      lineEquals(0, 'visible');
+      strictEqual(term.buffer.active.cursorX, 7);
+    });
+
+    it('keeps hidden capture isolated between terminals', async () => {
+      const other = new Terminal({ allowProposedApi: true });
+      try {
+        strictEqual(await writeResult(term, 'first-', false), '');
+        strictEqual(await writeResult(other, 'second\r\n', false), 'second\n');
+        strictEqual(await writeResult(term, 'done\r\n', false), 'first-done\n');
+      } finally {
+        other.dispose();
+      }
+    });
+
+    it('keeps hidden writes behind paused display parsing in the same queue', async () => {
+      let resume: (result: boolean) => void;
+      const started = new Promise<void>(resolve => {
+        term.parser.registerCsiHandler({ final: 'z' }, () => {
+          resolve();
+          return new Promise<boolean>(r => { resume = r; });
+        });
+      });
+      const callbacks: string[] = [];
+      const queue = (label: string, text: string, showOnTerm: boolean): Promise<string> => new Promise(resolve => {
+        term.write(text, (result?: string) => {
+          callbacks.push(label);
+          resolve(result ?? '');
+        }, showOnTerm);
+      });
+      const visible = queue('visible', 'before\x1b[zafter\r\n', true);
+      const hidden = queue('hidden', 'hidden\r\n', false);
+      const later = queue('later', 'later\r\n', true);
+      await started;
+      deepStrictEqual(callbacks, []);
+      resume!(true);
+      deepStrictEqual(await Promise.all([visible, hidden, later]), ['beforeafter\n', 'hidden\n', 'later\n']);
+      deepStrictEqual(callbacks, ['visible', 'hidden', 'later']);
+      lineEquals(0, 'beforeafter');
+      lineEquals(1, 'later');
+    });
+
+    it('keeps queued hidden output isolated when writeSync flushes it', async () => {
+      term.options.logLevel = 'off';
+      const hidden = writeResult(term, 'hidden\r\n', false);
+      (term as any)._core.writeSync('visible\r\n');
+      strictEqual(await hidden, 'hidden\n');
+      lineEquals(0, 'visible');
+      lineEquals(1, '');
+      strictEqual(await writeResult(term, 'next\r\n', false), 'next\n');
+    });
+  });
+
   it('write - bytes (UTF8)', async () => {
     await writeSync(new Uint8Array([102, 111, 111])); // foo
     await writeSync(new Uint8Array([98, 97, 114])); // bar
@@ -530,8 +694,8 @@ function writeSync(text: string | Uint8Array): Promise<void> {
   return new Promise<void>(r => term.write(text, r));
 }
 
-function writeResult(terminal: Terminal, text: string): Promise<string> {
-  return new Promise<string>(resolve => terminal.write(text, (result?: string) => resolve(result ?? '')));
+function writeResult(terminal: Terminal, text: string | Uint8Array, showOnTerm: boolean = true): Promise<string> {
+  return new Promise<string>(resolve => terminal.write(text, (result?: string) => resolve(result ?? ''), showOnTerm));
 }
 
 function writelnSync(text: string | Uint8Array): Promise<void> {

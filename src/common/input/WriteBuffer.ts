@@ -73,6 +73,8 @@ export class WriteBuffer extends Disposable {
     this._pendingData += data.length;
     this._writeBuffer.push(data);
     this._callbacks.push(undefined);
+    this._shouldParses.push(undefined);
+    this._showOnTerms.push(undefined);
 
     // increase recursion counter
     this._syncCalls++;
@@ -87,8 +89,8 @@ export class WriteBuffer extends Disposable {
     // we have to do it here as single loop steps to not corrupt loop subject
     // by another writeSync call triggered from _action
     let chunk: string | Uint8Array | undefined;
-    while (chunk = this._writeBuffer.shift()) {
-      this._action(chunk);
+    while ((chunk = this._writeBuffer.shift()) !== undefined) {
+      this._action(chunk, undefined, this._shouldParses.shift(), this._showOnTerms.shift());
       this._invokeCallback(this._callbacks.shift());
     }
     // reset to avoid reprocessing of chunks with scheduled innerWrite call

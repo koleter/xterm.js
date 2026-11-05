@@ -85,6 +85,24 @@ describe('WriteBuffer', () => {
         done();
       });
     });
+    it('preserves write options when writeSync flushes queued and empty chunks', async () => {
+      const actions: [string | Uint8Array, boolean | undefined, boolean | undefined][] = [];
+      wb = new WriteBuffer((data, promiseResult, hasCallback, showOnTerm) => {
+        actions.push([data, hasCallback, showOnTerm]);
+      });
+      wb.write('', undefined, false, false);
+      wb.write('hidden', undefined, true, false);
+      wb.writeSync('sync');
+      await new Promise<void>(resolve => wb.write('next', resolve, false, true));
+
+      assert.deepEqual(actions, [
+        ['', false, false],
+        ['hidden', true, false],
+        ['sync', undefined, undefined],
+        ['next', false, true]
+      ]);
+    });
+
     it('writeSync called from action does not overflow callstack - issue #3265', () => {
       wb = new WriteBuffer(data => {
         const num = parseInt(data as string);

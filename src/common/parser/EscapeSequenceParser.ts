@@ -634,33 +634,25 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           for (let j = i + 1; ; ++j) {
             if (j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
               this.resultParser.print(data.subarray(i, j));
-              if (this.resultParser.showOnTerm) {
-                this._printHandler(data, i, j);
-              }
+              this._printHandler(data, i, j);
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
               this.resultParser.print(data.subarray(i, j));
-              if (this.resultParser.showOnTerm) {
-                this._printHandler(data, i, j);
-              }
+              this._printHandler(data, i, j);
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
               this.resultParser.print(data.subarray(i, j));
-              if (this.resultParser.showOnTerm) {
-                this._printHandler(data, i, j);
-              }
+              this._printHandler(data, i, j);
               i = j - 1;
               break;
             }
             if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
               this.resultParser.print(data.subarray(i, j));
-              if (this.resultParser.showOnTerm) {
-                this._printHandler(data, i, j);
-              }
+              this._printHandler(data, i, j);
               i = j - 1;
               break;
             }

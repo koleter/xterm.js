@@ -1216,8 +1216,9 @@ declare module '@xterm/xterm' {
      * can span multiple writes. This does not indicate command completion.
      * Captured line endings are normalized to \n.
      * Completion-only callbacks are also supported.
-     * @param showOnTerm Whether to apply the data to the terminal buffer. Defaults
-     * to true. If false, text is captured separately without modifying the buffer.
+     * @param showOnTerm Whether to apply the data to the terminal buffer.
+     * Defaults to true. If false, text is captured separately without modifying
+     * the buffer.
      */
     write(data: string | Uint8Array, callback?: ((rawString: string) => void) | (() => void), showOnTerm?: boolean): void;
 

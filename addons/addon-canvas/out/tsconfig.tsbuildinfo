@@ -1,0 +1,1 @@
+{"root":["../src/baserenderlayer.ts","../src/canvasaddon.ts","../src/canvasrenderer.ts","../src/cursorrenderlayer.ts","../src/gridcache.test.ts","../src/gridcache.ts","../src/linkrenderlayer.ts","../src/selectionrenderlayer.ts","../src/textrenderlayer.ts","../src/types.d.ts","../../../typings/xterm.d.ts"],"version":"5.7.2"}

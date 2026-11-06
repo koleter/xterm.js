@@ -826,8 +826,9 @@ declare module '@xterm/headless' {
      * can span multiple writes. This does not indicate command completion.
      * Captured line endings are normalized to \n.
      * Completion-only callbacks are also supported.
-     * @param showOnTerm Whether to apply the data to the terminal buffer. Defaults
-     * to true. If false, text is captured separately without modifying the buffer.
+     * @param showOnTerm Whether to apply the data to the terminal buffer.
+     * Defaults to true. If false, text is captured separately without modifying
+     * the buffer.
      */
     write(data: string | Uint8Array, callback?: ((rawString: string) => void) | (() => void), showOnTerm?: boolean): void;
 
@@ -1205,6 +1206,8 @@ declare module '@xterm/headless' {
 
   /**
    * Allows hooking into the parser for custom handling of escape sequences.
+   * Handlers may return a Promise<boolean>; input parsing pauses until it
+   * resolves or rejects.
    */
   export interface IParser {
     /**
@@ -1219,7 +1222,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
@@ -1238,7 +1241,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
@@ -1251,7 +1254,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -1269,7 +1272,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }
 
   /**

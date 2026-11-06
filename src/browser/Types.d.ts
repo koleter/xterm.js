@@ -29,7 +29,7 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
 
   cancel(ev: Event, force?: boolean): boolean | void;
 
-  write(data: string | Uint8Array, callback?: (() => void) | undefined, showOnTerm?: boolean): void;
+  write(data: string | Uint8Array, callback?: ((rawString: string) => void) | (() => void), showOnTerm?: boolean): void;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;

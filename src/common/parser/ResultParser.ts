@@ -9,16 +9,16 @@ class LineBuffer {
     this.buffer = new Uint32Array(32);
   }
 
-  public setData(codeArray: Uint32Array, pos: number) {
-    if (this.buffer.length <= pos + codeArray.length) {
+  public setData(codeArray: Uint32Array, pos: number): void {
+    if (this.buffer.length < pos + codeArray.length) {
       const newArray = new Uint32Array((pos + codeArray.length) * 2);
       newArray.set(this.buffer);
       this.buffer = newArray;
     }
-    let writePos = pos;
-    for (let i = 0; i < codeArray.length; i++) {
-      this.buffer[writePos++] = codeArray[i];
+    if (pos > this.size) {
+      this.buffer.fill(32, this.size, pos);
     }
+    this.buffer.set(codeArray, pos);
     this.size = Math.max(this.size, pos + codeArray.length);
   }
 
@@ -30,9 +30,7 @@ class LineBuffer {
     if (start < 0) {
       start = 0;
     }
-    if (end < 0) {
-      end = this.size;
-    }
+    end = end < 0 ? this.size : Math.min(end, this.size);
     while (start < end) {
       // replace with space
       this.buffer[start] = 32;
@@ -61,6 +59,18 @@ export class ResultParser {
     this.col = 0;
     this.line = 0;
     this.buffers = [];
+    this.shouldPrint = false;
+  }
+
+  public lineFeed(): void {
+    if (!this.shouldParse) {
+      return;
+    }
+    this.line++;
+    // Capture text lines independently of the display cursor's VT line feed behavior.
+    this.col = 0;
+    this.shouldPrint = true;
+    this._getBufferLine();
   }
 
   public print(codeArray: Uint32Array) {
@@ -70,12 +80,16 @@ export class ResultParser {
     if (codeArray.length === 0) {
       return;
     }
+    const bufferLine = this._getBufferLine();
+    bufferLine.setData(codeArray, this.col);
+    this.col += codeArray.length;
+  }
+
+  private _getBufferLine(): LineBuffer {
     while (this.buffers.length <= this.line) {
       this.buffers.push(new LineBuffer());
     }
-    const bufferLine = this.buffers[this.line];
-    bufferLine.setData(codeArray, this.col);
-    this.col += codeArray.length;
+    return this.buffers[this.line];
   }
 
   public setCol(col: number) {
@@ -146,34 +160,8 @@ export class ResultParser {
     if (!this.shouldPrint) {
       return "";
     }
-    if (this.line === 0) {
-      return "";
-    }
-    let strings: string[] = [];
-    for (let i = 0; i < this.buffers.length; i++) {
-      const line = this.buffers[i];
-      if (!line) {
-        // maybe this line has been deleted
-        this.clear();
-        return strings.join("");
-      }
-      let lineStr = line.toString();
-      if (i === 0) {
-        for (let j = 0; j < 10; j++) {
-          if (lineStr.charCodeAt(j) === 0) {
-            let k = j;
-            while (lineStr.charCodeAt(k) === 0) {
-              k++;
-            }
-            lineStr = lineStr.substring(k);
-            break;
-          }
-        }
-      }
-      strings.push(lineStr);
-    }
+    const result = this.buffers.map(line => line.toString()).join('\n');
     this.clear();
-    this.shouldPrint = false;
-    return strings.join("");
+    return result;
   }
 }

@@ -95,6 +95,88 @@ describe('Headless API Tests', function (): void {
     }
   });
 
+  describe('captured text', () => {
+    for (const showOnTerm of [true, false]) {
+      describe(showOnTerm ? 'displayed writes' : 'hidden writes', () => {
+        it('preserves LF, CRLF, LFCR and empty lines without NUL characters', async () => {
+          const cases = [
+            ['abc\ndef\n', 'abc\ndef\n'],
+            ['abc\r\ndef\r\n', 'abc\ndef\n'],
+            ['abc\n\rdef\n\r', 'abc\ndef\n'],
+            ['first\r\n\r\nlast\r\n', 'first\n\nlast\n'],
+            ['\n\n', '\n\n']
+          ];
+          for (const [input, expected] of cases) {
+            strictEqual(await writeResult(term, input, showOnTerm), expected);
+          }
+        });
+
+        it('preserves text around cursor gaps and fills them with spaces', async () => {
+          strictEqual(await writeResult(term, '\x1b[3Cvalue\r\n', showOnTerm), '   value\n');
+          strictEqual(await writeResult(term, 'a\x1b[3Cb\r\n', showOnTerm), 'a   b\n');
+          strictEqual(await writeResult(term, 'first\r\n\x1b[3Csecond\r\n', showOnTerm), 'first\n   second\n');
+        });
+
+        it('preserves line separators when the next line is erased', async () => {
+          strictEqual(await writeResult(term, 'first\r\n\x1b[2Ksecond\r\n', showOnTerm), 'first\nsecond\n');
+          strictEqual(await writeResult(term, 'first\r\n\x1b[Ksecond\r\n', showOnTerm), 'first\nsecond\n');
+        });
+
+        it('applies carriage returns, backspaces and erase-to-end within a text line', async () => {
+          strictEqual(await writeResult(term, 'hello\b\bXY\r\n', showOnTerm), 'helXY\n');
+          strictEqual(await writeResult(term, 'abcdef\rXY\x1b[K\r\n', showOnTerm), 'XY    \n');
+        });
+
+        it('produces the same text with line endings split at any write boundary', async () => {
+          const input = 'abc\n\rdef\r\n\r\nxyz\n';
+          const expected = 'abc\ndef\n\nxyz\n';
+          for (let split = 0; split <= input.length; split++) {
+            const other = new Terminal({ allowProposedApi: true });
+            try {
+              const first = await writeResult(other, input.substring(0, split), showOnTerm);
+              const second = await writeResult(other, input.substring(split), showOnTerm);
+              strictEqual(first + second, expected);
+            } finally {
+              other.dispose();
+            }
+          }
+        });
+
+        it('keeps the existing callback behavior for partial lines', async () => {
+          strictEqual(await writeResult(term, 'part', showOnTerm), '');
+          strictEqual(await writeResult(term, 'done\r\nprompt', showOnTerm), 'partdone\nprompt');
+          strictEqual(await writeResult(term, 'suffix', showOnTerm), '');
+          strictEqual(await writeResult(term, '\r\n', showOnTerm), 'suffix\n');
+        });
+
+        it('discards pending captured text on terminal reset', async () => {
+          strictEqual(await writeResult(term, 'old', showOnTerm), '');
+          term.reset();
+          strictEqual(await writeResult(term, 'new\r\n', showOnTerm), 'new\n');
+        });
+      });
+    }
+
+    it('normalizes captured LF without changing native display cursor behavior', async () => {
+      strictEqual(await writeResult(term, 'abc\ndef\n'), 'abc\ndef\n');
+      lineEquals(0, 'abc');
+      lineEquals(1, '   def');
+      strictEqual(term.buffer.active.cursorX, 6);
+      strictEqual(term.buffer.active.cursorY, 2);
+    });
+
+    it('supports text callbacks and completion-only promise resolvers', async () => {
+      let captured: string | undefined;
+      await new Promise<void>(resolve => term.write('hidden\r\n', text => {
+        captured = text;
+        resolve();
+      }, false));
+      strictEqual(captured, 'hidden\n');
+      await new Promise<void>(resolve => term.write('visible\r\n', resolve));
+      lineEquals(0, 'visible');
+    });
+  });
+
   describe('hidden output', () => {
     it('does not change the displayed buffer, cursor or modes', async () => {
       await writeSync('visible');

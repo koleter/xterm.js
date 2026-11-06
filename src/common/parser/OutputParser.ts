@@ -10,7 +10,6 @@ import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { IParams } from 'common/parser/Types';
 
 const INPUT_CHUNK_LENGTH = 4096;
-const LINE_FEED = new Uint32Array([10]);
 
 /**
  * Captures hidden output without access to terminal buffers, services or event handlers.
@@ -28,9 +27,7 @@ export class OutputParser extends Disposable {
     const result = this._parser.resultParser;
     for (const code of [C0.LF, C0.VT, C0.FF]) {
       this._parser.setExecuteHandler(code, () => {
-        result.moveCursor(0, 1);
-        result.shouldPrint = true;
-        result.print(LINE_FEED);
+        result.lineFeed();
         return true;
       });
     }

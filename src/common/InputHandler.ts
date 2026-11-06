@@ -711,9 +711,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
   public lineFeed(): boolean {
-    this._parser.resultParser.moveCursor(0, 1);
-    this._parser.resultParser.shouldPrint = true;
-    this._parser.resultParser.print(new Uint32Array([10]));
+    this._parser.resultParser.lineFeed();
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     if (this._optionsService.rawOptions.convertEol) {
       this._activeBuffer.x = 0;
@@ -3311,6 +3309,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public reset(): void {
+    this._parser.resultParser.clear();
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
     this._eraseAttrDataInternal = DEFAULT_ATTR_DATA.clone();
   }

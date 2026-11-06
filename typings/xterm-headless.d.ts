@@ -821,9 +821,15 @@ declare module '@xterm/headless' {
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. It receives captured text without escape sequences when a
+     * line feed has been processed, or an empty string otherwise. Pending text
+     * can span multiple writes. This does not indicate command completion.
+     * Captured line endings are normalized to \n.
+     * Completion-only callbacks are also supported.
+     * @param showOnTerm Whether to apply the data to the terminal buffer. Defaults
+     * to true. If false, text is captured separately without modifying the buffer.
      */
-    write(data: string | Uint8Array, callback?: () => void): void;
+    write(data: string | Uint8Array, callback?: ((rawString: string) => void) | (() => void), showOnTerm?: boolean): void;
 
     /**
      * Writes data to the terminal, followed by a break line character (\n).

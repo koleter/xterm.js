@@ -221,7 +221,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public clear(): void {
     this._core.clear();
   }
-  public write(data: string | Uint8Array, callback?: () => void, showOnTerm: boolean = true): void {
+  public write(data: string | Uint8Array, callback?: ((rawString: string) => void) | (() => void), showOnTerm: boolean = true): void {
     this._core.write(data, callback, showOnTerm);
   }
   public writeln(data: string | Uint8Array, callback?: () => void): void {
